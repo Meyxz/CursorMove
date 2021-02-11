@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -21,7 +21,7 @@ namespace CursorMove
             int yAxisMin = 0;
             int cursorAmount = 5;
             int paddleSize = 3;
-            int xPaddle = xAxisMin;
+            int xPaddle = xAxisMin + paddleSize;
             int[] xAxis = new int[cursorAmount];
             int[] yAxis = new int[cursorAmount];
             int[] cursorColor = new int[cursorAmount];
@@ -30,7 +30,7 @@ namespace CursorMove
             bool isPaddleReverse = false;
             bool[] reverseXAxis = new bool[cursorAmount];
             bool[] reverseYAxis = new bool[cursorAmount];
-            bool[] paddleHit = new bool[cursorAmount];
+            bool[] paddleBlock = new bool[cursorAmount];
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
 
@@ -43,6 +43,7 @@ namespace CursorMove
                     cursorColor[i] = RanNum.Next(1, 16);
                     reverseXAxis[i] = RandomDirection(reverseXAxis[i]);
                     reverseYAxis[i] = RandomDirection(reverseYAxis[i]);
+                    paddleBlock[i] = true;
                 }
 
                 for (int i = 0; i <= yAxisMax; i++)
@@ -57,6 +58,7 @@ namespace CursorMove
                 {
                     for (int i = 0; i < cursorAmount; i++)
                     {
+                        paddleBlock[i] = IsPaddleHit(xAxis[i], yAxis[i], yAxisMax, xPaddle, paddleSize, paddleBlock[i]);
                         reverseYAxis[i] = IsVerticalReversed(yAxis[i], yAxisMax, yAxisMin, reverseYAxis[i]);
                         reverseXAxis[i] = IsHorizontalReversed(xAxis[i], xAxisMax, xAxisMin, reverseXAxis[i]);
 
@@ -77,31 +79,33 @@ namespace CursorMove
                         {
                             xAxis[i]++;
                         }
-
-                        if (isPaddleReverse)
-                        {
-                            xPaddle--;
-                        }
-                        else
-                        {
-                            xPaddle++;
-                        }
                     }
 
-                    for (int i = 0; i <= paddleSize; i++)
+                    isPaddleReverse = IsHorizontalReversed(xPaddle, (xAxisMax - paddleSize), (xAxisMin + paddleSize), isPaddleReverse);
+
+                    if (isPaddleReverse)
                     {
-                        Console.SetCursorPosition((xPaddle + i), yAxisMax);
-                        Console.WriteLine("_");
-                        Console.SetCursorPosition((xPaddle - i), yAxisMax);
-                        Console.WriteLine("_");
+                        xPaddle--;
                     }
-
+                    else
+                    {
+                        xPaddle++;
+                    }
+                    
                     for (int print = 0; print < cursorAmount; print++)
                     {
                         Console.SetCursorPosition(xAxis[print], yAxis[print]);
                         Console.ForegroundColor = (ConsoleColor)cursorColor[print];
                         Console.Write("X");
                         Console.ForegroundColor = ConsoleColor.White;
+                    }
+
+                    for (int i = 0; i <= paddleSize; i++)
+                    {
+                        Console.SetCursorPosition(xPaddle + i, yAxisMax);
+                        Console.WriteLine("_");
+                        Console.SetCursorPosition(xPaddle - i, yAxisMax);
+                        Console.WriteLine("_");
                     }
 
                     Thread.Sleep(30);
@@ -114,9 +118,9 @@ namespace CursorMove
 
                     for (int i = 0; i <= paddleSize; i++)
                     {
-                        Console.SetCursorPosition((xPaddle + i), yAxisMax);
+                        Console.SetCursorPosition(xPaddle + i, yAxisMax);
                         Console.WriteLine(" ");
-                        Console.SetCursorPosition((xPaddle - i), yAxisMax);
+                        Console.SetCursorPosition(xPaddle - i, yAxisMax);
                         Console.WriteLine(" ");
                     }
                 }
@@ -149,6 +153,24 @@ namespace CursorMove
             }
 
             return horizontalReversed;
+        }
+
+        bool IsPaddleHit(int xPos, int yPos, int yPosPaddle, int xPosPaddle, int xPaddleSize, bool isPaddleBlock)
+        {
+            if(yPos < (yPosPaddle - 1))
+            {
+                isPaddleBlock = true;
+            }
+            else if (xPos >= (xPosPaddle - xPaddleSize) && xPos <= (xPosPaddle + xPaddleSize))
+            {
+                isPaddleBlock = true;
+            }
+            else
+            {
+                isPaddleBlock = false;
+            }
+
+            return isPaddleBlock;
         }
 
         bool RandomDirection(bool RandomBool)
