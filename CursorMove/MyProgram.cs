@@ -15,176 +15,146 @@ namespace CursorMove
              * (x går från 0 till maxvärde (Console.WindowWidth) som representerar vänster till höger i konsolen.)
              * (y går från 0 till maxvärde (Console.WindowHeight) som representerar höjden där 0 är längst upp och när värdet stiger så flyttas den neråt.)
              */
-            int xAxisMax = (Console.WindowWidth - 3);
-            int yAxisMax = (Console.WindowHeight - 1);
             int xAxisMin = 3;
+            int xAxisMax = (Console.WindowWidth - 3);
             int yAxisMin = 0;
+            int yAxisMax = (Console.WindowHeight - 1);
             int cursorAmount = 5;
             int paddleSize = 3;
+            int paddleVelocity = 1;
             int xPaddle = xAxisMin + paddleSize;
+            int yPaddle = yAxisMax - 1;
+
             int[] xAxis = new int[cursorAmount];
+            int[] xVelocity = new int[cursorAmount];
             int[] yAxis = new int[cursorAmount];
+            int[] yVelocity = new int[cursorAmount];
             int[] cursorColor = new int[cursorAmount];
+
             bool isMoving = true;
             bool isRunning = true;
-            bool isPaddleReverse = false;
-            bool[] reverseXAxis = new bool[cursorAmount];
-            bool[] reverseYAxis = new bool[cursorAmount];
-            bool[] paddleBlock = new bool[cursorAmount];
+
+            bool[] showCursor = new bool[cursorAmount];
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
 
             while (isRunning)
             {
-                for (int i = 0; i < cursorAmount; i++) // Random x och y värde, färg och riktning.
+                for (int i = 0; i < cursorAmount; i++)
                 {
                     xAxis[i] = RanNum.Next(xAxisMin, xAxisMax);
                     yAxis[i] = RanNum.Next(yAxisMin, yAxisMax);
                     cursorColor[i] = RanNum.Next(1, 16);
-                    reverseXAxis[i] = RandomDirection(reverseXAxis[i]);
-                    reverseYAxis[i] = RandomDirection(reverseYAxis[i]);
-                    paddleBlock[i] = true;
+                    xVelocity[i] = RandomizeVelocity(xVelocity[i]);
+                    yVelocity[i] = RandomizeVelocity(yVelocity[i]);
+                    showCursor[i] = true;
                 }
 
-                for (int i = 0; i <= yAxisMax; i++)
+                for (int i = 0; i <= yAxisMax; i++)     // Ritar "väggarna" i konsolen.
                 {
                     Console.SetCursorPosition(xAxisMax, i);
-                    Console.WriteLine("|");
-                    Console.SetCursorPosition((xAxisMin - 1), i);
-                    Console.WriteLine("|");
+                    Console.Write("|");
+                    Console.SetCursorPosition(xAxisMin, i);
+                    Console.Write("|");
                 }
 
                 while (isMoving)
                 {
+                    if (((xPaddle + paddleSize) + paddleVelocity) >= xAxisMax)      // Kollar om plattan går out of bounds.
+                    {
+                        paddleVelocity = paddleVelocity * -1;
+                        xPaddle = xAxisMax - paddleSize;
+                    }
+                    else if (((xPaddle - paddleSize) + paddleVelocity) <= xAxisMin)
+                    {
+                        paddleVelocity = paddleVelocity * -1;
+                        xPaddle = xAxisMin + paddleSize;
+                    }
+
+                    xPaddle = xPaddle + paddleVelocity;     // Beräknar plattans position.
+
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        paddleBlock[i] = IsPaddleHit(xAxis[i], yAxis[i], yAxisMax, xPaddle, paddleSize, paddleBlock[i]);
-                        reverseYAxis[i] = IsVerticalReversed(yAxis[i], yAxisMax, yAxisMin, reverseYAxis[i]);
-                        reverseXAxis[i] = IsHorizontalReversed(xAxis[i], xAxisMax, xAxisMin, reverseXAxis[i]);
+                        if (showCursor[i])      // Jag har använt en boolean vid namnet showCursor för att undvika att beräkna tecken som inte visas.
+                        {
+                            if ((yAxis[i] + yVelocity[i]) >= yAxisMax)
+                            {
+                                // Kollar om tecknets x värde är inom plattans intervall.
+                                if ((xAxis[i] + xVelocity[i]) >= (xPaddle - paddleSize) && (xAxis[i] + xVelocity[i]) <= (xPaddle + paddleSize))
+                                {
+                                    yVelocity[i] = yVelocity[i] * -1;
+                                    yAxis[i] = yAxisMax - 1;
+                                }
+                                else
+                                {
+                                    yAxis[i] = xAxisMax - 1;
+                                    showCursor[i] = false;
+                                }
+                            }
+                            else if ((yAxis[i] + yVelocity[i]) <= yAxisMin)
+                            {
+                                yVelocity[i] = yVelocity[i] * -1;
+                                yAxis[i] = yAxisMin;
+                            }
 
-                        if (reverseYAxis[i])
-                        {
-                            yAxis[i]--;
-                        }
-                        else
-                        {
-                            yAxis[i]++;
-                        }
+                            if ((xAxis[i] + xVelocity[i]) >= xAxisMax || (xAxis[i] + xVelocity[i]) <= xAxisMin)
+                            {
+                                xVelocity[i] = xVelocity[i] * -1;
+                            }
 
-                        if (reverseXAxis[i])
-                        {
-                            xAxis[i]--;
-                        }
-                        else
-                        {
-                            xAxis[i]++;
+                            xAxis[i] += xVelocity[i];
+                            yAxis[i] += yVelocity[i];
                         }
                     }
 
-                    isPaddleReverse = IsHorizontalReversed(xPaddle, (xAxisMax - paddleSize), (xAxisMin + paddleSize), isPaddleReverse);
 
-                    if (isPaddleReverse)
-                    {
-                        xPaddle--;
-                    }
-                    else
-                    {
-                        xPaddle++;
-                    }
-                    
-                    for (int print = 0; print < cursorAmount; print++)
-                    {
-                        Console.SetCursorPosition(xAxis[print], yAxis[print]);
-                        Console.ForegroundColor = (ConsoleColor)cursorColor[print];
-                        Console.Write("X");
-                        Console.ForegroundColor = ConsoleColor.White;
-                    }
 
                     for (int i = 0; i <= paddleSize; i++)
                     {
-                        Console.SetCursorPosition(xPaddle + i, yAxisMax);
-                        Console.WriteLine("_");
-                        Console.SetCursorPosition(xPaddle - i, yAxisMax);
-                        Console.WriteLine("_");
+                        Console.SetCursorPosition(xPaddle + i, yPaddle);
+                        Console.Write("_");
+                        Console.SetCursorPosition(xPaddle - i, yPaddle);
+                        Console.Write("_");
+                    }
+
+                    for (int i = 0; i < cursorAmount; i++)
+                    {
+                        if (showCursor[i])
+                        {
+                            Console.SetCursorPosition(xAxis[i], yAxis[i]);
+                            Console.ForegroundColor = (ConsoleColor)cursorColor[i];
+                            Console.Write("X");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                     }
 
                     Thread.Sleep(30);
 
-                    for (int print = 0; print < cursorAmount; print++)
+                    for (int i = 0; i < cursorAmount; i++)
                     {
-                        Console.SetCursorPosition(xAxis[print], yAxis[print]);
-                        Console.Write(" ");
+                        if (showCursor[i])
+                        {
+                            Console.SetCursorPosition(xAxis[i], yAxis[i]);
+                            Console.Write(" ");
+                        }
                     }
 
                     for (int i = 0; i <= paddleSize; i++)
                     {
-                        Console.SetCursorPosition(xPaddle + i, yAxisMax);
-                        Console.WriteLine(" ");
-                        Console.SetCursorPosition(xPaddle - i, yAxisMax);
-                        Console.WriteLine(" ");
+                        Console.SetCursorPosition(xPaddle + i, yPaddle);
+                        Console.Write(" ");
+                        Console.SetCursorPosition(xPaddle - i, yPaddle);
+                        Console.Write(" ");
                     }
                 }
             }
         }
 
-        bool IsVerticalReversed(int yPos, int yPosMax, int yPosMin, bool verticalReversed)
+        int RandomizeVelocity(int RandomVelocity)
         {
-            if (yPos == yPosMax)
-            {
-                verticalReversed = true;
-            }
-            else if (yPos == yPosMin)
-            {
-                verticalReversed = false;
-            }
+            RandomVelocity = RanNum.Next(0, 2) * 2 - 1;
 
-            return verticalReversed;
-        }
-
-        bool IsHorizontalReversed(int xPos, int xPosMax, int xPosMin, bool horizontalReversed)
-        {
-            if (xPos == (xPosMax - 1))
-            {
-                horizontalReversed = true;
-            }
-            else if (xPos == xPosMin)
-            {
-                horizontalReversed = false;
-            }
-
-            return horizontalReversed;
-        }
-
-        bool IsPaddleHit(int xPos, int yPos, int yPosPaddle, int xPosPaddle, int xPaddleSize, bool isPaddleBlock)
-        {
-            if(yPos < (yPosPaddle - 1))
-            {
-                isPaddleBlock = true;
-            }
-            else if (xPos >= (xPosPaddle - xPaddleSize) && xPos <= (xPosPaddle + xPaddleSize))
-            {
-                isPaddleBlock = true;
-            }
-            else
-            {
-                isPaddleBlock = false;
-            }
-
-            return isPaddleBlock;
-        }
-
-        bool RandomDirection(bool RandomBool)
-        {
-            if (RanNum.NextDouble() >= 0.5)
-            {
-                RandomBool = true;
-            }
-            else
-            {
-                RandomBool = false;
-            }
-
-            return RandomBool;
+            return RandomVelocity;
         }
     }
 }
