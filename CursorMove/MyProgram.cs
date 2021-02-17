@@ -7,7 +7,7 @@ namespace CursorMove
 {
     class MyProgram
     {
-        Random RanNum = new Random();
+        Random ranNum = new Random();
 
         public void Run()
         {
@@ -20,7 +20,7 @@ namespace CursorMove
             int yAxisMin = 0;
             int yAxisMax = (Console.WindowHeight - 1);
             int cursorAmount = 5;
-            int paddleSize = 3;
+            int paddleSize = 7;
             int paddleVelocity = 1;
             int xPaddle = xAxisMin + paddleSize;
             int yPaddle = yAxisMax - 1;
@@ -30,11 +30,12 @@ namespace CursorMove
             int[] yAxis = new int[cursorAmount];
             int[] yVelocity = new int[cursorAmount];
             int[] cursorColor = new int[cursorAmount];
+            int[] scoreBricks = new int[6];
 
-            bool isMoving = true;
+            bool isActive = true;
             bool isRunning = true;
 
-            bool[] showCursor = new bool[cursorAmount];
+            bool[] inactiveCursor = new bool[cursorAmount];
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
 
@@ -42,12 +43,7 @@ namespace CursorMove
             {
                 for (int i = 0; i < cursorAmount; i++)
                 {
-                    xAxis[i] = RanNum.Next(xAxisMin, xAxisMax);
-                    yAxis[i] = RanNum.Next(yAxisMin, yAxisMax);
-                    cursorColor[i] = RanNum.Next(1, 16);
-                    xVelocity[i] = RandomizeVelocity(xVelocity[i]);
-                    yVelocity[i] = RandomizeVelocity(yVelocity[i]);
-                    showCursor[i] = true;
+                    inactiveCursor[i] = true;
                 }
 
                 for (int i = 0; i <= yAxisMax; i++)     // Ritar "väggarna" i konsolen.
@@ -58,56 +54,66 @@ namespace CursorMove
                     Console.Write("|");
                 }
 
-                while (isMoving)
+                while (isActive)
                 {
+                    for (int i = 0; i < cursorAmount; i++)
+                    {
+                        if (inactiveCursor[i])
+                        {
+                            xAxis[i] = ranNum.Next(xAxisMin, xAxisMax);
+                            yAxis[i] = ranNum.Next(yAxisMin, yAxisMax);
+                            cursorColor[i] = ranNum.Next(1, 16);
+                            xVelocity[i] = RandomizeVelocity(xVelocity[i]);
+                            yVelocity[i] = RandomizeVelocity(yVelocity[i]);
+                            inactiveCursor[i] = false;
+                        }
+                    }
+
                     if (((xPaddle + paddleSize) + paddleVelocity) >= xAxisMax)      // Kollar om plattan går out of bounds.
                     {
-                        paddleVelocity = paddleVelocity * -1;
+                        paddleVelocity *= -1;
                         xPaddle = xAxisMax - paddleSize;
                     }
                     else if (((xPaddle - paddleSize) + paddleVelocity) <= xAxisMin)
                     {
-                        paddleVelocity = paddleVelocity * -1;
+                        paddleVelocity *= -1;
                         xPaddle = xAxisMin + paddleSize;
                     }
 
-                    xPaddle = xPaddle + paddleVelocity;     // Beräknar plattans position.
+                    xPaddle += paddleVelocity;     // Beräknar plattans position.
 
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])      // Jag har använt en boolean vid namnet showCursor för att undvika att beräkna tecken som inte visas.
+                        if (!inactiveCursor[i])      // Jag har använt en boolean vid namnet showCursor för att undvika att beräkna tecken som inte visas.
                         {
                             if ((yAxis[i] + yVelocity[i]) >= yAxisMax)
                             {
                                 // Kollar om tecknets x värde är inom plattans intervall.
                                 if ((xAxis[i] + xVelocity[i]) >= (xPaddle - paddleSize) && (xAxis[i] + xVelocity[i]) <= (xPaddle + paddleSize))
                                 {
-                                    yVelocity[i] = yVelocity[i] * -1;
+                                    yVelocity[i] *= -1;
                                     yAxis[i] = yAxisMax - 1;
                                 }
                                 else
                                 {
-                                    yAxis[i] = xAxisMax - 1;
-                                    showCursor[i] = false;
+                                    inactiveCursor[i] = true;
                                 }
                             }
                             else if ((yAxis[i] + yVelocity[i]) <= yAxisMin)
                             {
-                                yVelocity[i] = yVelocity[i] * -1;
+                                yVelocity[i] *= -1;
                                 yAxis[i] = yAxisMin;
                             }
 
                             if ((xAxis[i] + xVelocity[i]) >= xAxisMax || (xAxis[i] + xVelocity[i]) <= xAxisMin)
                             {
-                                xVelocity[i] = xVelocity[i] * -1;
+                                xVelocity[i] *= -1;
                             }
 
                             xAxis[i] += xVelocity[i];
                             yAxis[i] += yVelocity[i];
                         }
                     }
-
-
 
                     for (int i = 0; i <= paddleSize; i++)
                     {
@@ -119,7 +125,7 @@ namespace CursorMove
 
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])
+                        if (!inactiveCursor[i])
                         {
                             Console.SetCursorPosition(xAxis[i], yAxis[i]);
                             Console.ForegroundColor = (ConsoleColor)cursorColor[i];
@@ -132,7 +138,7 @@ namespace CursorMove
 
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])
+                        if (!inactiveCursor[i])
                         {
                             Console.SetCursorPosition(xAxis[i], yAxis[i]);
                             Console.Write(" ");
@@ -152,7 +158,7 @@ namespace CursorMove
 
         int RandomizeVelocity(int RandomVelocity)
         {
-            RandomVelocity = RanNum.Next(0, 2) * 2 - 1;
+            RandomVelocity = ranNum.Next(0, 2) * 2 - 1;
 
             return RandomVelocity;
         }
