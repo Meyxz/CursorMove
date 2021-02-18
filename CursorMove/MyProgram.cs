@@ -12,7 +12,7 @@ namespace CursorMove
         const byte min = 0;
         const byte max = 1;
 
-        Random ranNum = new Random();
+        Random rnd = new Random();
 
         public void Run()
         {
@@ -30,29 +30,32 @@ namespace CursorMove
             windowLimit[x, max] = xBorder - 1;
             windowLimit[y, min] = 0;
             windowLimit[y, max] = yBorder - 1;
+            
             int cursorAmount = 5;
-
             int paddleSize = 10;
             int paddleVelocity = 1;
             int xPaddle = windowLimit[x, min];
             int yPaddle = windowLimit[y, max] - 1;
 
             int xBrickSize = 5;
-            int xbrickSpacing = 2;
-
-            int brickRows = windowLimit[x, max] / (xBrickSize + xbrickSpacing);
+            int xBrickSpacing = 2;
             int brickColumns = 2;
+
+            int brickRows = windowLimit[x, max] / (xBrickSize + xBrickSpacing);
             int brickAmount = brickRows * brickColumns;
+
+            int freeSpace = windowLimit[x, max] - ((brickRows * xBrickSize) + (xBrickSpacing * (brickRows - 1)));
 
             int[,] posAxis = new int[cursorAmount, 2];
             int[,] cursorVelocity = new int[cursorAmount, 2];
+            int[,] scoreBricks = new int[brickAmount, 2];
             int[] cursorColor = new int[cursorAmount];
-            int[] xScoreBricks = new int[brickAmount];
 
             bool isActive = true;
             bool isRunning = true;
 
             bool[] inactiveCursor = new bool[cursorAmount];
+            bool[] hitBricks = new bool[brickAmount];
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
 
@@ -71,6 +74,25 @@ namespace CursorMove
                     Console.Write("|");
                 }
 
+                scoreBricks[0, x] = freeSpace / 2;
+                scoreBricks[0, y] = 0;
+                scoreBricks[0 + brickRows, x] = freeSpace / 2;
+                scoreBricks[0 + brickRows, y] = 1;
+
+                for (int i = 1; i < brickRows; i++)
+                {
+                    scoreBricks[i, x] = scoreBricks[i - 1, x] + xBrickSize + xBrickSpacing;
+                    scoreBricks[i, y] = 0;
+                    scoreBricks[i + brickRows, x] = scoreBricks[i - 1, x] + xBrickSize + xBrickSpacing;
+                    scoreBricks[i + brickRows, y] = 1;
+                }
+
+                for (int i = 0; i < brickAmount; i++)
+                {
+                    Console.SetCursorPosition(scoreBricks[i, x], scoreBricks[i, y]);
+                    Console.WriteLine("-----");
+                }
+
                 while (isActive)
                 {
                     for (int i = 0; i < cursorAmount; i++)
@@ -78,9 +100,9 @@ namespace CursorMove
 
                         if (inactiveCursor[i])
                         {
-                            posAxis[i, x] = ranNum.Next(windowLimit[x, min], windowLimit[x, max]);
-                            posAxis[i, y] = ranNum.Next(windowLimit[y, min], windowLimit[y, max]);
-                            cursorColor[i] = ranNum.Next(1, 16);
+                            posAxis[i, x] = rnd.Next(windowLimit[x, min], windowLimit[x, max]);
+                            posAxis[i, y] = rnd.Next(windowLimit[y, min], windowLimit[y, max]);
+                            cursorColor[i] = rnd.Next(1, 16);
                             cursorVelocity[i, x] = RandomizeVelocity(cursorVelocity[i, x]);
                             cursorVelocity[i, y] = RandomizeVelocity(cursorVelocity[i, y]);
                             inactiveCursor[i] = false;
@@ -123,7 +145,7 @@ namespace CursorMove
                                     posAxis[i, y] = yBorder;
                                 }
                             }
-                            else if ((posAxis[i, y] + cursorVelocity[i, y]) <= windowLimit[y, min])
+                            else if ((posAxis[i, y] + cursorVelocity[i, y]) < windowLimit[y, min])
                             {
                                 cursorVelocity[i, y] *= -1;
                                 posAxis[i, y] = windowLimit[y, min];
@@ -178,7 +200,7 @@ namespace CursorMove
 
         int RandomizeVelocity(int RandomVelocity)
         {
-            RandomVelocity = ranNum.Next(0, 2) * 2 - 1;
+            RandomVelocity = rnd.Next(0, 2) * 2 - 1;
 
             return RandomVelocity;
         }
