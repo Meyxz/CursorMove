@@ -31,7 +31,6 @@ namespace CursorMove
             windowLimit[y, min] = 0;
             windowLimit[y, max] = yBorder - 1;
 
-
             const byte cursorAmount = 5;
             const byte paddleSize = 10;
             const byte xBrickSize = 5;
@@ -47,7 +46,7 @@ namespace CursorMove
             int brickRows = (windowLimit[x, max] - windowLimit[x, min]) / (xBrickSize + xBrickSpacing);
             int brickAmount = brickRows * brickColumns;
 
-            int freeSpace = (windowLimit[x, max] - windowLimit[x, min]) - ((brickRows * xBrickSize) + (xBrickSpacing * (brickRows - 1)));
+            int freeSpace = (windowLimit[x, max] - windowLimit[x, min]) - ((xBrickSpacing * (brickRows - 2)) + (brickRows * xBrickSize));
 
             string brickText = string.Empty;
 
