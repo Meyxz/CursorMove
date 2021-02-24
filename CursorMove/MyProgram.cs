@@ -30,21 +30,26 @@ namespace CursorMove
             windowLimit[x, max] = xBorder - 1;
             windowLimit[y, min] = 0;
             windowLimit[y, max] = yBorder - 1;
+
+
+            const byte cursorAmount = 5;
+            const byte paddleSize = 10;
+            const byte xBrickSize = 5;
+            const byte xBrickSpacing = 2;
+            const byte brickColumns = 3;
+
+            byte yBrickAxis = 0;
             
-            int cursorAmount = 5;
-            int paddleSize = 10;
             int paddleVelocity = 1;
             int xPaddle = windowLimit[x, min];
             int yPaddle = windowLimit[y, max] - 1;
-
-            int xBrickSize = 5;
-            int xBrickSpacing = 2;
-            int brickColumns = 3;
 
             int brickRows = (windowLimit[x, max] - windowLimit[x, min]) / (xBrickSize + xBrickSpacing);
             int brickAmount = brickRows * brickColumns;
 
             int freeSpace = (windowLimit[x, max] - windowLimit[x, min]) - ((brickRows * xBrickSize) + (xBrickSpacing * (brickRows - 1)));
+
+            string brickText = string.Empty;
 
             int[,] posAxis = new int[cursorAmount, 2];
             int[,] cursorVelocity = new int[cursorAmount, 2];
@@ -80,8 +85,6 @@ namespace CursorMove
                     scoreBricks[brickRows * i, y] = i;
                 }
 
-                byte yBrickAxis = 0;
-
                 for (int i = 1; i < brickAmount; i++)
                 {
                     if (i % brickRows == 0)
@@ -94,10 +97,15 @@ namespace CursorMove
                     scoreBricks[i, y] = yBrickAxis;
                 }
 
+                for (int i = 1; i <= xBrickSize; i++)
+                {
+                    brickText += "-";
+                }
+
                 for (int i = 0; i < brickAmount; i++)
                 {
                     Console.SetCursorPosition(scoreBricks[i, x], scoreBricks[i, y]);
-                    Console.WriteLine("-----");
+                    Console.WriteLine(brickText);
                 }
 
                 while (isActive)
@@ -108,7 +116,7 @@ namespace CursorMove
                         if (inactiveCursor[i])
                         {
                             posAxis[i, x] = rnd.Next(windowLimit[x, min], windowLimit[x, max]);
-                            posAxis[i, y] = rnd.Next(windowLimit[y, min], windowLimit[y, max]);
+                            posAxis[i, y] = rnd.Next((windowLimit[y, min] + brickColumns), windowLimit[y, max]);
                             cursorColor[i] = rnd.Next(1, 16);
                             cursorVelocity[i, x] = RandomizeVelocity(cursorVelocity[i, x]);
                             cursorVelocity[i, y] = RandomizeVelocity(cursorVelocity[i, y]);
