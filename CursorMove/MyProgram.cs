@@ -16,11 +16,11 @@ namespace CursorMove
              * (y går från 0 till maxvärde (Console.WindowHeight) som representerar höjden där 0 är längst upp och när värdet stiger så flyttas den neråt.)
              */
             int xAxisMin = 3;
-            int xAxisMax = (Console.WindowWidth - 3);
+            int xAxisMax = (Console.WindowWidth / 3);
             int yAxisMin = 0;
             int yAxisMax = (Console.WindowHeight - 1);
             int cursorAmount = 5;
-            int paddleSize = 3;
+            int paddleSize = 5;
             int paddleVelocity = 1;
             int xPaddle = xAxisMin + paddleSize;
             int yPaddle = yAxisMax - 1;
