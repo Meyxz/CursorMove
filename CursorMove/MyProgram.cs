@@ -7,7 +7,12 @@ namespace CursorMove
 {
     class MyProgram
     {
-        Random RanNum = new Random();
+        const byte x = 0;
+        const byte y = 1;
+        const byte min = 0;
+        const byte max = 1;
+
+        Random rnd = new Random();
 
         public void Run()
         {
@@ -15,26 +20,47 @@ namespace CursorMove
              * (x går från 0 till maxvärde (Console.WindowWidth) som representerar vänster till höger i konsolen.)
              * (y går från 0 till maxvärde (Console.WindowHeight) som representerar höjden där 0 är längst upp och när värdet stiger så flyttas den neråt.)
              */
-            int xAxisMin = 3;
-            int xAxisMax = (Console.WindowWidth / 3);
-            int yAxisMin = 0;
-            int yAxisMax = (Console.WindowHeight - 1);
-            int cursorAmount = 5;
-            int paddleSize = 5;
-            int paddleVelocity = 1;
-            int xPaddle = xAxisMin + paddleSize;
-            int yPaddle = yAxisMax - 1;
 
-            int[] xAxis = new int[cursorAmount];
-            int[] xVelocity = new int[cursorAmount];
-            int[] yAxis = new int[cursorAmount];
-            int[] yVelocity = new int[cursorAmount];
+            int xBorder = Console.WindowWidth - 1;
+            int yBorder = Console.WindowHeight - 1;
+
+            int[,] windowLimit = new int[2, 2];
+
+            windowLimit[x, min] = 0;
+            windowLimit[x, max] = xBorder - 1;
+            windowLimit[y, min] = 0;
+            windowLimit[y, max] = yBorder - 1;
+
+            const byte cursorAmount = 1;
+            const byte paddleSize = 10;
+            const byte xBrickSize = 5;
+            const byte xBrickSpacing = 2;
+            const byte brickColumns = 3;
+
+            byte yBrickAxis = 0;
+
+            int paddleVelocity = 1;
+            int xPaddle = windowLimit[x, min];
+            int yPaddle = windowLimit[y, max] - 1;
+
+            int brickRows = (windowLimit[x, max] - windowLimit[x, min]) / (xBrickSize + xBrickSpacing);
+            int brickAmount = brickRows * brickColumns;
+
+            int freeSpace = (windowLimit[x, max] - windowLimit[x, min]) - ((xBrickSpacing * (brickRows - 2)) + (brickRows * xBrickSize));
+
+            string brickText = string.Empty;
+            string brickClearText = string.Empty;
+
+            int[,] posAxis = new int[cursorAmount, 2];
+            int[,] cursorVelocity = new int[cursorAmount, 2];
+            int[,] scoreBricks = new int[brickAmount, 2];
             int[] cursorColor = new int[cursorAmount];
 
-            bool isMoving = true;
+            bool isActive = true;
             bool isRunning = true;
 
-            bool[] showCursor = new bool[cursorAmount];
+            bool[] inactiveCursor = new bool[cursorAmount];
+            bool[] hitBricks = new bool[brickAmount];
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
 
@@ -42,86 +68,157 @@ namespace CursorMove
             {
                 for (int i = 0; i < cursorAmount; i++)
                 {
-                    xAxis[i] = RanNum.Next(xAxisMin, xAxisMax);
-                    yAxis[i] = RanNum.Next(yAxisMin, yAxisMax);
-                    cursorColor[i] = RanNum.Next(1, 16);
-                    xVelocity[i] = RandomizeVelocity(xVelocity[i]);
-                    yVelocity[i] = RandomizeVelocity(yVelocity[i]);
-                    showCursor[i] = true;
+                    inactiveCursor[i] = true;
                 }
 
-                for (int i = 0; i <= yAxisMax; i++)     // Ritar "väggarna" i konsolen.
+                for (int i = 0; i < brickAmount; i++)
                 {
-                    Console.SetCursorPosition(xAxisMax, i);
+                    hitBricks[i] = false;
+                }
+
+                for (int i = 0; i <= yBorder; i++)     // Ritar "väggarna" i konsolen.
+                {
+                    Console.SetCursorPosition(xBorder, i);
                     Console.Write("|");
-                    Console.SetCursorPosition(xAxisMin, i);
+                    Console.SetCursorPosition(windowLimit[x, min], i);
                     Console.Write("|");
                 }
 
-                while (isMoving)
+
+                for (int i = 0; i < brickColumns; i++)
                 {
-                    if (((xPaddle + paddleSize) + paddleVelocity) >= xAxisMax)      // Kollar om plattan går out of bounds.
+                    scoreBricks[brickRows * i, x] = windowLimit[x, min] + (freeSpace / 2);
+                    scoreBricks[brickRows * i, y] = i;
+                }
+
+                for (int i = 1; i < brickAmount; i++)
+                {
+                    if (i % brickRows == 0)
                     {
-                        paddleVelocity = paddleVelocity * -1;
-                        xPaddle = xAxisMax - paddleSize;
-                    }
-                    else if (((xPaddle - paddleSize) + paddleVelocity) <= xAxisMin)
-                    {
-                        paddleVelocity = paddleVelocity * -1;
-                        xPaddle = xAxisMin + paddleSize;
+                        yBrickAxis++;
+                        i++;
                     }
 
-                    xPaddle = xPaddle + paddleVelocity;     // Beräknar plattans position.
+                    scoreBricks[i, x] = scoreBricks[(i - 1), x] + xBrickSize + xBrickSpacing;
+                    scoreBricks[i, y] = yBrickAxis;
+                }
 
+                for (int i = 1; i <= xBrickSize; i++)
+                {
+                    brickText += "-";
+                    brickClearText += " ";
+                }
+
+                for (int i = 0; i < brickAmount; i++)
+                {
+                    Console.SetCursorPosition(scoreBricks[i, x], scoreBricks[i, y]);
+                    Console.WriteLine(brickText);
+                }
+
+                while (isActive)
+                {
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])      // Jag har använt en boolean vid namnet showCursor för att undvika att beräkna tecken som inte visas.
+
+                        if (inactiveCursor[i])
                         {
-                            if ((yAxis[i] + yVelocity[i]) >= yAxisMax)
-                            {
-                                // Kollar om tecknets x värde är inom plattans intervall.
-                                if ((xAxis[i] + xVelocity[i]) >= (xPaddle - paddleSize) && (xAxis[i] + xVelocity[i]) <= (xPaddle + paddleSize))
-                                {
-                                    yVelocity[i] = yVelocity[i] * -1;
-                                    yAxis[i] = yAxisMax - 1;
-                                }
-                                else
-                                {
-                                    yAxis[i] = xAxisMax - 1;
-                                    showCursor[i] = false;
-                                }
-                            }
-                            else if ((yAxis[i] + yVelocity[i]) <= yAxisMin)
-                            {
-                                yVelocity[i] = yVelocity[i] * -1;
-                                yAxis[i] = yAxisMin;
-                            }
+                            posAxis[i, x] = rnd.Next(windowLimit[x, min], windowLimit[x, max]);
+                            posAxis[i, y] = rnd.Next((windowLimit[y, min] + brickColumns), windowLimit[y, max]);
+                            cursorColor[i] = rnd.Next(1, 16);
+                            cursorVelocity[i, x] = RandomizeVelocity(cursorVelocity[i, x]);
+                            cursorVelocity[i, y] = RandomizeVelocity(cursorVelocity[i, y]);
+                            inactiveCursor[i] = false;
+                        }
 
-                            if ((xAxis[i] + xVelocity[i]) >= xAxisMax || (xAxis[i] + xVelocity[i]) <= xAxisMin)
-                            {
-                                xVelocity[i] = xVelocity[i] * -1;
-                            }
+                        if (cursorVelocity[i, y] == 0)
+                        {
+                            inactiveCursor[i] = true;
+                        }
 
-                            xAxis[i] += xVelocity[i];
-                            yAxis[i] += yVelocity[i];
+                    }
+
+                    for (int i = 0; i < brickAmount; i++)
+                    {
+                        if (hitBricks[i])
+                        {
+                            Console.SetCursorPosition(scoreBricks[i, x], scoreBricks[i, y]);
+                            Console.Write(brickClearText);
                         }
                     }
 
+                    if (((xPaddle + paddleSize) + paddleVelocity) > windowLimit[x, max])      // Kollar om plattan går out of bounds.
+                    {
+                        paddleVelocity = -paddleVelocity;
+                        xPaddle = windowLimit[x, max] - paddleSize;
+                    }
+                    else if ((xPaddle + paddleVelocity) <= windowLimit[x, min])
+                    {
+                        paddleVelocity = -paddleVelocity;
+                        xPaddle = windowLimit[x, min];
+                    }
 
+                    xPaddle += paddleVelocity;     // Beräknar plattans position.
+
+                    for (int i = 0; i < cursorAmount; i++)
+                    {
+                        if (!inactiveCursor[i])      // Jag har använt en boolean vid namnet showCursor för att undvika att beräkna tecken som inte visas.
+                        {
+                            for (int j = 0; j < brickAmount; j++)
+                            {
+                                if(!hitBricks[j])
+                                {
+                                    if (posAxis[i, x] >= scoreBricks[j, x] && (posAxis[i, x] <= (scoreBricks[j, x]) + xBrickSize))
+                                    {
+                                        if (posAxis[i, y] == scoreBricks[j, y])
+                                        {
+                                            hitBricks[j] = true;
+                                            cursorVelocity[i, y] = -cursorVelocity[i, y];
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ((posAxis[i, y] + cursorVelocity[i, y]) >= windowLimit[y, max])
+                            {
+                                // Kollar om tecknets x värde är inom plattans intervall.
+                                if (((posAxis[i, x] + cursorVelocity[i, x]) >= xPaddle) && (posAxis[i, x] + cursorVelocity[i, x]) <= (xPaddle + paddleSize))
+                                {
+                                    cursorVelocity[i, y] = -cursorVelocity[i, y];
+                                    posAxis[i, y] = windowLimit[y, max];
+                                }
+                                else
+                                {
+                                    cursorVelocity[i, y] = 0;
+                                    posAxis[i, y] = yBorder;
+                                }
+                            }
+                            else if ((posAxis[i, y] + cursorVelocity[i, y]) < windowLimit[y, min])
+                            {
+                                cursorVelocity[i, y] = -cursorVelocity[i, y];
+                                posAxis[i, y] = windowLimit[y, min];
+                            }
+
+                            if ((posAxis[i, x] + cursorVelocity[i, x]) >= windowLimit[x, max] || (posAxis[i, x] + cursorVelocity[i, x]) <= windowLimit[x, min])
+                            {
+                                cursorVelocity[i, x] = -cursorVelocity[i, x];
+                            }
+
+                            posAxis[i, x] += cursorVelocity[i, x];
+                            posAxis[i, y] += cursorVelocity[i, y];
+                        }
+                    }
 
                     for (int i = 0; i <= paddleSize; i++)
                     {
                         Console.SetCursorPosition(xPaddle + i, yPaddle);
                         Console.Write("_");
-                        Console.SetCursorPosition(xPaddle - i, yPaddle);
-                        Console.Write("_");
                     }
 
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])
+                        if (!inactiveCursor[i])
                         {
-                            Console.SetCursorPosition(xAxis[i], yAxis[i]);
+                            Console.SetCursorPosition(posAxis[i, x], posAxis[i, y]);
                             Console.ForegroundColor = (ConsoleColor)cursorColor[i];
                             Console.Write("X");
                             Console.ForegroundColor = ConsoleColor.White;
@@ -132,9 +229,9 @@ namespace CursorMove
 
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (showCursor[i])
+                        if (!inactiveCursor[i])
                         {
-                            Console.SetCursorPosition(xAxis[i], yAxis[i]);
+                            Console.SetCursorPosition(posAxis[i, x], posAxis[i, y]);
                             Console.Write(" ");
                         }
                     }
@@ -143,8 +240,6 @@ namespace CursorMove
                     {
                         Console.SetCursorPosition(xPaddle + i, yPaddle);
                         Console.Write(" ");
-                        Console.SetCursorPosition(xPaddle - i, yPaddle);
-                        Console.Write(" ");
                     }
                 }
             }
@@ -152,7 +247,7 @@ namespace CursorMove
 
         int RandomizeVelocity(int RandomVelocity)
         {
-            RandomVelocity = RanNum.Next(0, 2) * 2 - 1;
+            RandomVelocity = rnd.Next(0, 2) * 2 - 1;
 
             return RandomVelocity;
         }
