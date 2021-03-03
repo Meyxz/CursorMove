@@ -7,6 +7,18 @@ namespace CursorMove
 {
     class MyProgram
     {
+
+        public ConsoleKeyInfo KeyInfoA(char keyCharA, ConsoleKey keyCKA, bool keyShiftA, bool keyAltA, bool keyCtrlA);
+
+        public ConsoleKeyInfo KeyInfoD(char keyCharD, ConsoleKey keyCKD, bool keyShiftD, bool keyAltD, bool keyCtrlD)
+        {
+            keyCKD = ConsoleKey.D;
+            keyCharD = 'd';
+            keyShiftD = false;
+            keyAltD = false;
+            keyCtrlD = false;
+        }
+
         const byte X = 0;
         const byte Y = 1;
         const byte MIN = 0;
@@ -31,7 +43,7 @@ namespace CursorMove
             windowLimit[Y, MIN] = 0;
             windowLimit[Y, MAX] = yBorder - 1;
 
-            byte cursorAmount = 1;
+            byte cursorAmount = 5;
             byte paddleSize = 10;
             byte xBrickSize = 5;
             byte xBrickSpacing = 2;
@@ -62,7 +74,10 @@ namespace CursorMove
             bool[] inactiveCursor = new bool[cursorAmount];
             bool[] hitBricks = new bool[brickAmount];
 
+            ConsoleKeyInfo keyInfo;
+
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
+            Console.TreatControlCAsInput = true;
 
             while (isRunning)
             {
@@ -119,7 +134,7 @@ namespace CursorMove
                 {
                     for (int i = 0; i < cursorAmount; i++)
                     {
-                        if (inactiveCursor[i])
+                        if (inactiveCursor[i])      //  Om tecknet "försvinner" d.v.s. går till y-gränsen så blir den inactive. Denna if-sats ger den en nya värden och "startar" om.
                         {
                             posAxis[i, X] = rnd.Next(windowLimit[X, MIN], windowLimit[X, MAX]);
                             posAxis[i, Y] = rnd.Next((windowLimit[Y, MIN] + brickColumns), windowLimit[Y, MAX]);
@@ -129,7 +144,7 @@ namespace CursorMove
                             inactiveCursor[i] = false;
                         }
 
-                        if (cursorVelocity[i, Y] == 0)
+                        if (cursorVelocity[i, Y] == 0)      //  Om hastigheten är == 0, så blir den inactive.
                         {
                             inactiveCursor[i] = true;
                         }
@@ -145,14 +160,32 @@ namespace CursorMove
                         }
                     }
 
+                    if (Console.KeyAvailable)
+                    {
+                        keyInfo = ConsoleKeyCheck(100);
+
+                        if (keyInfo.Equals(KeyInfoA))
+                        {
+                            paddleVelocity = -1;
+                        }
+                        else if (keyInfo.Equals(KeyInfoD))
+                        {
+                            paddleVelocity = 1;
+                        }
+                        else
+                        {
+                            paddleVelocity = 0;
+                        }
+                    }
+
                     if (((xPaddle + paddleSize) + paddleVelocity) > windowLimit[X, MAX])      // Kollar om plattan går out of bounds.
                     {
-                        paddleVelocity = -paddleVelocity;
+                        paddleVelocity = 0;
                         xPaddle = windowLimit[X, MAX] - paddleSize;
                     }
                     else if ((xPaddle + paddleVelocity) <= windowLimit[X, MIN])
                     {
-                        paddleVelocity = -paddleVelocity;
+                        paddleVelocity = 0;
                         xPaddle = windowLimit[X, MIN];
                     }
 
@@ -249,6 +282,21 @@ namespace CursorMove
             RandomVelocity = rnd.Next(0, 2) * 2 - 1;
 
             return RandomVelocity;
+        }
+
+        ConsoleKeyInfo ConsoleKeyCheck(int ms)
+        {
+            int delay = 0;
+            while (delay < ms)
+            {
+                if (Console.KeyAvailable)
+                {
+                    return (ConsoleKeyInfo) Console.ReadKey(true);
+                }
+                Thread.Sleep(ms);
+                delay += ms;
+            }
+            return new ConsoleKeyInfo((char)0, (ConsoleKey)0, false, false, false);
         }
     }
 }
