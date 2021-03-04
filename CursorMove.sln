@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorMove", "CursorMove\CursorMove.csproj", "{9AC369CF-7D0F-4125-A8BA-F100380FA7D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CursorMove", "CursorMove\CursorMove.csproj", "{9AC369CF-7D0F-4125-A8BA-F100380FA7D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorMovement", "CursorMovement\CursorMovement.csproj", "{236B5A94-957D-465C-BD37-8C052D97E520}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{9AC369CF-7D0F-4125-A8BA-F100380FA7D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AC369CF-7D0F-4125-A8BA-F100380FA7D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AC369CF-7D0F-4125-A8BA-F100380FA7D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{236B5A94-957D-465C-BD37-8C052D97E520}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{236B5A94-957D-465C-BD37-8C052D97E520}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{236B5A94-957D-465C-BD37-8C052D97E520}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{236B5A94-957D-465C-BD37-8C052D97E520}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

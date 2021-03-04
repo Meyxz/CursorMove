@@ -1,23 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace CursorMove
 {
     class MyProgram
     {
-
-        public ConsoleKeyInfo KeyInfoA(char keyCharA, ConsoleKey keyCKA, bool keyShiftA, bool keyAltA, bool keyCtrlA);
-
-        public ConsoleKeyInfo KeyInfoD(char keyCharD, ConsoleKey keyCKD, bool keyShiftD, bool keyAltD, bool keyCtrlD)
-        {
-            keyCKD = ConsoleKey.D;
-            keyCharD = 'd';
-            keyShiftD = false;
-            keyAltD = false;
-            keyCtrlD = false;
-        }
 
         const byte X = 0;
         const byte Y = 1;
@@ -38,17 +25,17 @@ namespace CursorMove
 
             int[,] windowLimit = new int[2, 2];
 
-            windowLimit[X, MIN] = 0;
+            windowLimit[X, MIN] = 1;
             windowLimit[X, MAX] = xBorder - 1;
             windowLimit[Y, MIN] = 0;
             windowLimit[Y, MAX] = yBorder - 1;
 
-            byte cursorAmount = 5;
+            byte cursorAmount = 1;
             byte paddleSize = 10;
             byte xBrickSize = 5;
             byte xBrickSpacing = 2;
             byte brickColumns = 3;
-
+            
             byte yBrickAxis = 0;
 
             int paddleVelocity = 1;
@@ -63,6 +50,8 @@ namespace CursorMove
             string brickText = string.Empty;
             string brickClearText = string.Empty;
 
+            char cursorChar = '■';
+
             int[,] posAxis = new int[cursorAmount, 2];
             int[,] cursorVelocity = new int[cursorAmount, 2];
             int[,] scoreBricks = new int[brickAmount, 2];
@@ -74,7 +63,7 @@ namespace CursorMove
             bool[] inactiveCursor = new bool[cursorAmount];
             bool[] hitBricks = new bool[brickAmount];
 
-            ConsoleKeyInfo keyInfo;
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo((char)0, (ConsoleKey)0, false, false, false);
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
             Console.TreatControlCAsInput = true;
@@ -95,10 +84,9 @@ namespace CursorMove
                 {
                     Console.SetCursorPosition(xBorder, i);
                     Console.Write("|");
-                    Console.SetCursorPosition(windowLimit[X, MIN], i);
+                    Console.SetCursorPosition(windowLimit[X, MIN] - 1, i);
                     Console.Write("|");
                 }
-
 
                 for (int i = 0; i < brickColumns; i++)
                 {
@@ -160,15 +148,15 @@ namespace CursorMove
                         }
                     }
 
-                    if (Console.KeyAvailable)
+                    if (Console.KeyAvailable)   //  Behöver fixas, den stannar inte när man släpper tangenten.
                     {
-                        keyInfo = ConsoleKeyCheck(100);
+                        keyInfo = WaitForKey(10);
 
-                        if (keyInfo.Equals(KeyInfoA))
+                        if (keyInfo.Key == ConsoleKey.LeftArrow)
                         {
                             paddleVelocity = -1;
                         }
-                        else if (keyInfo.Equals(KeyInfoD))
+                        else if (keyInfo.Key == ConsoleKey.RightArrow)
                         {
                             paddleVelocity = 1;
                         }
@@ -197,7 +185,7 @@ namespace CursorMove
                         {
                             for (int j = 0; j < brickAmount; j++)
                             {
-                                if(!hitBricks[j])
+                                if (!hitBricks[j])
                                 {
                                     if (posAxis[i, X] >= scoreBricks[j, X] && (posAxis[i, X] <= (scoreBricks[j, X]) + xBrickSize))
                                     {
@@ -243,7 +231,7 @@ namespace CursorMove
                     for (int i = 0; i <= paddleSize; i++)
                     {
                         Console.SetCursorPosition(xPaddle + i, yPaddle);
-                        Console.Write("_");
+                        Console.Write("☐");
                     }
 
                     for (int i = 0; i < cursorAmount; i++)
@@ -252,7 +240,7 @@ namespace CursorMove
                         {
                             Console.SetCursorPosition(posAxis[i, X], posAxis[i, Y]);
                             Console.ForegroundColor = (ConsoleColor)cursorColor[i];
-                            Console.Write("X");
+                            Console.Write(cursorChar);
                             Console.ForegroundColor = ConsoleColor.White;
                         }
                     }
@@ -284,14 +272,14 @@ namespace CursorMove
             return RandomVelocity;
         }
 
-        ConsoleKeyInfo ConsoleKeyCheck(int ms)
+        ConsoleKeyInfo WaitForKey(int ms)
         {
             int delay = 0;
             while (delay < ms)
             {
                 if (Console.KeyAvailable)
                 {
-                    return (ConsoleKeyInfo) Console.ReadKey(true);
+                    return Console.ReadKey();
                 }
                 Thread.Sleep(ms);
                 delay += ms;
