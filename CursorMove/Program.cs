@@ -1,4 +1,5 @@
-﻿namespace CursorMove
+﻿
+namespace CursorMove
 {
     class Program
     {

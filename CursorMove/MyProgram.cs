@@ -50,7 +50,7 @@ namespace CursorMove
             string brickText = string.Empty;
             string brickClearText = string.Empty;
 
-            char cursorChar = '■';
+            char cursorChar = '\u25A0';
 
             int[,] posAxis = new int[cursorAmount, 2];
             int[,] cursorVelocity = new int[cursorAmount, 2];
@@ -148,6 +148,8 @@ namespace CursorMove
                         }
                     }
 
+                    paddleVelocity = 0;
+
                     if (Console.KeyAvailable)   //  Behöver fixas, den stannar inte när man släpper tangenten.
                     {
                         keyInfo = WaitForKey(10);
@@ -159,10 +161,6 @@ namespace CursorMove
                         else if (keyInfo.Key == ConsoleKey.RightArrow)
                         {
                             paddleVelocity = 1;
-                        }
-                        else
-                        {
-                            paddleVelocity = 0;
                         }
                     }
 
@@ -204,7 +202,7 @@ namespace CursorMove
                                 if (((posAxis[i, X] + cursorVelocity[i, X]) >= xPaddle) && (posAxis[i, X] + cursorVelocity[i, X]) <= (xPaddle + paddleSize))
                                 {
                                     cursorVelocity[i, Y] = -cursorVelocity[i, Y];
-                                    posAxis[i, Y] = windowLimit[Y, MAX];
+                                    posAxis[i, Y] = windowLimit[Y, MAX] - 1;
                                 }
                                 else
                                 {
@@ -231,7 +229,9 @@ namespace CursorMove
                     for (int i = 0; i <= paddleSize; i++)
                     {
                         Console.SetCursorPosition(xPaddle + i, yPaddle);
-                        Console.Write("☐");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("\u2588");
+                        Console.ResetColor();
                     }
 
                     for (int i = 0; i < cursorAmount; i++)
@@ -271,7 +271,6 @@ namespace CursorMove
 
             return RandomVelocity;
         }
-
         ConsoleKeyInfo WaitForKey(int ms)
         {
             int delay = 0;
