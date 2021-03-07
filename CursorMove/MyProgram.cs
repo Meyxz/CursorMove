@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Linq;
 
 namespace CursorMove
 {
@@ -9,10 +10,14 @@ namespace CursorMove
         const byte Y = 1;
         const byte MIN = 0;
         const byte MAX = 1;
-
-        Random rnd = new Random();
+        readonly Random rnd = new Random();
 
         public void Run()
+        {
+            BreakoutGame();
+        }
+
+        private void BreakoutGame()
         {
             #region Variables
 
@@ -43,6 +48,7 @@ namespace CursorMove
             int paddleVelocity = 2;
             int xPaddle = windowLimit[X, MIN];
             int yPaddle = windowLimit[Y, MAX] - 1;
+            int colorStep = 0;
 
             int brickRows = (windowLimit[X, MAX] - windowLimit[X, MIN]) / (xBrickSize + xBrickSpacing);
             int brickAmount = brickRows * brickColumns;
@@ -60,6 +66,7 @@ namespace CursorMove
             int[,] cursorVelocity = new int[cursorAmount, 2];
             int[,] scoreBricks = new int[brickAmount, 2];
             int[] cursorColor = new int[cursorAmount];
+            int[] brickColor = new int[brickAmount];
 
             string[] brickText = new string[brickAmount];
 
@@ -68,8 +75,6 @@ namespace CursorMove
 
             bool[] inactiveCursor = new bool[cursorAmount];
             bool[] hitBricks = new bool[brickAmount];
-
-            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo((char)0, (ConsoleKey)0, false, false, false);
 
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
             Console.TreatControlCAsInput = true;
@@ -106,20 +111,51 @@ namespace CursorMove
                 }
                 #endregion Walls
 
-                #region Bricks
                 for (int i = 0; i < brickColumns; i++)
                 {
                     scoreBricks[brickRows * i, X] = windowLimit[X, MIN] + (freeSpace / 2);
                     scoreBricks[brickRows * i, Y] = yBrickAxis + (1 * i);
+                    brickColor[brickRows * i] = 12;
                 }
 
                 for (int i = 1; i < brickAmount; i++)
                 {
-                    if (i % brickRows == 0)
+                    if (i % brickRows == 0 && i <= brickRows * brickColumns)
                     {
                         yBrickAxis++;
                         i++;
                     }
+
+                    switch (colorStep)
+                    {
+                        case 0:
+                            brickColor[i] = 6;
+                            break;
+                        case 1:
+                            brickColor[i] = 14;
+                            break;
+                        case 2:
+                            brickColor[i] = 10;
+                            break;
+                        case 3:
+                            brickColor[i] = 9;
+                            break;
+                        case 4:
+                            brickColor[i] = 1;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (colorStep == 4)
+                    {
+                        colorStep = 0;
+                    }
+                    if (yBrickAxis > windowLimit[Y, MIN] + brickColumns)
+                    {
+                        System.Diagnostics.Debugger.Break();
+                    }
+                    colorStep++;
 
                     scoreBricks[i, X] = scoreBricks[(i - 1), X] + xBrickSize + xBrickSpacing;
                     scoreBricks[i, Y] = yBrickAxis;
@@ -129,15 +165,12 @@ namespace CursorMove
                 for (int i = 0; i < brickAmount; i++)
                 {
                     brickText[i] = brickTextStr;
-                }
-
-
-                for (int i = 0; i < brickAmount; i++)
-                {
                     Console.SetCursorPosition(scoreBricks[i, X], scoreBricks[i, Y]);
+                    Console.ForegroundColor = (ConsoleColor)brickColor[i];
                     Console.WriteLine(brickText[i]);
+                    Console.ResetColor();
                 }
-                #endregion Bricks
+
                 #endregion Initializing
 
                 while (isActive)
@@ -149,8 +182,8 @@ namespace CursorMove
                             posAxis[i, X] = rnd.Next(windowLimit[X, MIN], windowLimit[X, MAX]);
                             posAxis[i, Y] = rnd.Next((windowLimit[Y, MIN] + brickColumns), windowLimit[Y, MAX]);
                             cursorColor[i] = rnd.Next(1, 16);
-                            cursorVelocity[i, X] = RandomizeVelocity(cursorVelocity[i, X]);
-                            cursorVelocity[i, Y] = RandomizeVelocity(cursorVelocity[i, Y]);
+                            cursorVelocity[i, X] = RandomizeVelocity();
+                            cursorVelocity[i, Y] = RandomizeVelocity();
                             inactiveCursor[i] = false;
                         }
 
@@ -158,6 +191,11 @@ namespace CursorMove
                         {
                             inactiveCursor[i] = true;
                         }
+                    }
+
+                    if (!hitBricks.Contains(false))
+                    {
+                        isActive = false;
                     }
 
                     for (int i = 0; i < brickAmount; i++)
@@ -171,7 +209,7 @@ namespace CursorMove
 
                     if (Console.KeyAvailable)   //  Det funkar men är inte så responsiv. Mest troligt pga tangentbordsbuffer. Vet ej hur det kan fixas.
                     {
-                        keyInfo = Console.ReadKey(true);
+                        ConsoleKeyInfo keyInfo = Console.ReadKey(true);
 
                         if (keyInfo.Key == ConsoleKey.LeftArrow)
                         {
@@ -277,11 +315,12 @@ namespace CursorMove
                     Console.Write(paddleClearText);
                 }
             }
+            return;
         }
 
-        int RandomizeVelocity(int RandomVelocity)
+        int RandomizeVelocity()
         {
-            RandomVelocity = rnd.Next(2) * 2 - 1;
+            int RandomVelocity = rnd.Next(2) * 2 - 1;
 
             return RandomVelocity;
         }
