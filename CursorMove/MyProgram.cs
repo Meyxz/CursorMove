@@ -149,12 +149,6 @@ namespace CursorMove
                         case 6:
                             brickColor[i] = 5;
                             break;
-                        case 5:
-                            brickColor[i] = 13;
-                            break;
-                        case 6:
-                            brickColor[i] = 5;
-                            break;
                         default:
                             break;
                     }
