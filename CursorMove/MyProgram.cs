@@ -2,9 +2,9 @@ using System;
 using System.Threading;
 using System.Linq;
 
-
 namespace CursorMove
 {
+
     class MyProgram
     {
         const byte X = 0;
@@ -50,10 +50,12 @@ namespace CursorMove
             byte xBrickSize = 5;
             byte xBrickSpacing = 0;
             byte brickColumns = 5;
+            byte backgroundColor = 1;
 
+            int gameRound = 1;
 
             int paddleVelocity = 2;
-            int xPaddle = windowLimit[X, MIN] + ((windowLimit[X, MAX] - windowLimit[X, MIN]) / 2);
+            int xPaddle = (windowLimit[X, MIN] + ((windowLimit[X, MAX] - windowLimit[X, MIN]) / 2)) - (paddleSize / 2);
             int yPaddle = windowLimit[Y, MAX] - 1;
             int colorStep = 0;
 
@@ -77,7 +79,7 @@ namespace CursorMove
 
             string[] brickText = new string[brickAmount];
 
-            bool isActive = true;
+            bool isActive = false;
             bool isRunning = true;
 
             bool[] inactiveCursor = new bool[cursorAmount];
@@ -88,14 +90,16 @@ namespace CursorMove
             Console.CursorVisible = false;  // Gömmer kommandotolkens inbyggda cursor.
             Console.TreatControlCAsInput = true;
 
+            
+
             #endregion Variables
 
             while (isRunning)
             {
                 #region Initializing
-                PrintGameArea(yBorderMin, yBorderMax, xBorderMin, xBorderMax, windowLimit[X, MIN], windowLimit[X, MAX], windowLimit[Y, MIN], windowLimit[Y, MAX]);
+                PrintGameArea(yBorderMin, yBorderMax, xBorderMin, xBorderMax, windowLimit[X, MIN], windowLimit[X, MAX], windowLimit[Y, MIN], windowLimit[Y, MAX], backgroundColor);
                 isActive = true;
-                Console.BackgroundColor = ConsoleColor.Blue;
+                Console.BackgroundColor = (ConsoleColor)backgroundColor;
 
                 for (int i = 0; i < cursorAmount; i++)
                 {
@@ -108,7 +112,7 @@ namespace CursorMove
                 }
 
                 int yBrickAxis = windowLimit[Y, MIN] + 4;
-                for (int i = 0; i < brickAmount; i++)   //  Behöver fixas och optimeras, skapar problem för loop av isRunning om inte yBrickAxis blir reset före - Känns ineffektivt.
+                for (int i = 0; i < brickAmount; i++)
                 {
                     if (i == 0)
                     {
@@ -170,13 +174,18 @@ namespace CursorMove
 
                 while (isActive)
                 {
+                    if (!hitBricks.Contains(false))
+                    {
+                        isActive = false;
+                    }
+
                     for (int i = 0; i < cursorAmount; i++)
                     {
                         if (inactiveCursor[i])      //  Om tecknet "försvinner" d.v.s. går till y-gränsen så blir den inactive. Denna if-sats ger den en nya värden och "startar" om.
                         {
-                            posAxis[i, X] = rnd.Next(windowLimit[X, MIN], windowLimit[X, MAX]);
-                            posAxis[i, Y] = rnd.Next((windowLimit[Y, MIN] + brickColumns), windowLimit[Y, MAX]);
-                            cursorColor[i] = rnd.Next(1, 16);
+                            posAxis[i, X] = xPaddle + (paddleSize / 2);
+                            posAxis[i, Y] = yPaddle - 3;
+                            cursorColor[i] = 0;
                             cursorVelocity[i, X] = RandomizeVelocity();
                             cursorVelocity[i, Y] = -1;
                             inactiveCursor[i] = false;
@@ -188,11 +197,6 @@ namespace CursorMove
                         }
                     }
 
-                    if (!hitBricks.Contains(false))
-                    {
-                        isActive = false;
-                    }
-
                     for (int i = 0; i < brickAmount; i++)
                     {
                         if (hitBricks[i] == true)
@@ -200,7 +204,7 @@ namespace CursorMove
                             Console.SetCursorPosition(scoreBricks[i, X], scoreBricks[i, Y]);
                             Console.Write(brickClearText);
                             playerScore++;
-                            ScoreCounter(playerScore);
+                            ScoreCounter(playerScore, backgroundColor);
                             hitBricks[i] = null;
                         }
                     }
@@ -246,12 +250,12 @@ namespace CursorMove
                                 {
                                     if (posAxis[i, Y] + cursorVelocity[i, Y] == scoreBricks[j, Y])
                                     {
-                                        if (posAxis[i, X] >= scoreBricks[j, X] && (posAxis[i, X] <= (scoreBricks[j, X]) + xBrickSize - 1))
+                                        if (posAxis[i, X] + cursorVelocity[i, X] >= scoreBricks[j, X] && posAxis[i, X] - cursorVelocity[i, X] <= scoreBricks[j, X] + xBrickSize - 1)
                                         {
                                             hitBricks[j] = true;
                                             cursorVelocity[i, Y] = -cursorVelocity[i, Y];
                                         }
-                                        else if (posAxis[i, X] + cursorVelocity[i, X] == (scoreBricks[j, X] + xBrickSize) || posAxis[i, X] == (scoreBricks[j, X] - 1))
+                                        else if (posAxis[i, X] + cursorVelocity[i, X] == scoreBricks[j, X] + xBrickSize || posAxis[i, X] == scoreBricks[j, X] - 1)
                                         {
                                             cursorVelocity[i, X] = -cursorVelocity[i, X];
                                         }
@@ -320,7 +324,6 @@ namespace CursorMove
                     Console.Write(paddleClearText);
                 }
             }
-            return;
         }
 
         int RandomizeVelocity()
@@ -330,11 +333,11 @@ namespace CursorMove
             return RandomVelocity;
         }
 
-        private void PrintGameArea(int yBorderMin, int yBorderMax, int xBorderMin, int xBorderMax, int windowLimitXMin, int windowLimitXMax, int windowLimitYMin, int windowLimitYMax)
+        private void PrintGameArea(int yBorderMin, int yBorderMax, int xBorderMin, int xBorderMax, int windowLimitXMin, int windowLimitXMax, int windowLimitYMin, int windowLimitYMax, byte backgroundColor)
         {
-            string backgroundColor = new string(' ', (windowLimitXMax + 1) - windowLimitXMin);
+            string backgroundText = new string(' ', (windowLimitXMax + 1) - windowLimitXMin);
             string verticalText = new string('\u2588', (xBorderMax + 2) - windowLimitXMin);
-            ScoreCounter(0);
+            ScoreCounter(0, backgroundColor);
             Console.ForegroundColor = ConsoleColor.White;
             Console.SetCursorPosition(windowLimitXMin - 1, yBorderMin);
             Console.Write(verticalText);
@@ -349,21 +352,21 @@ namespace CursorMove
                 Console.SetCursorPosition(xBorderMin, i);
                 Console.Write('\u2588');
             }
-            Console.BackgroundColor = ConsoleColor.Blue;
+            Console.BackgroundColor = (ConsoleColor)backgroundColor;
             for (int i = windowLimitYMin; i <= windowLimitYMax; i++)
             {
                 Console.SetCursorPosition(windowLimitXMin, i);
-                Console.Write(backgroundColor);
+                Console.Write(backgroundText);
             }
             return;
         }
 
-        void ScoreCounter(int playerScore)
+        void ScoreCounter(int playerScore, byte backgroundColor)
         {
             Console.ResetColor();
             Console.SetCursorPosition(0, 0);
             Console.Write("Score: {0}", playerScore);
-            Console.BackgroundColor = ConsoleColor.Blue;
+            Console.BackgroundColor = (ConsoleColor)backgroundColor;
         }
     }
 }
