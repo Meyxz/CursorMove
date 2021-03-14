@@ -17,9 +17,6 @@ namespace CursorMove
 
         //  System.Diagnostics.Debugger.Break(); - Sparar den så jag inte glömmer bort.
 
-        //  fixa färghelvetet (enum), hitdetection, visuals & cursor spawn så det inte är fucked.
-
-
         public void Run()
         {
             BreakoutGame();
@@ -47,7 +44,7 @@ namespace CursorMove
 
             byte cursorAmount = 1;
             byte paddleSize = (byte)(windowLimit[X, MIN] + ((windowLimit[X, MAX] - windowLimit[X, MIN]) / 20));
-            byte xBrickSize = 5;
+            byte xBrickSize = 7;
             byte xBrickSpacing = 0;
             byte brickColumns = 5;
             byte backgroundColor = 1;
@@ -83,6 +80,7 @@ namespace CursorMove
             bool isRunning = true;
 
             bool[] inactiveCursor = new bool[cursorAmount];
+            bool[] cursorHit = new bool[cursorAmount];
             bool?[] hitBricks = new bool?[brickAmount];
 
             int playerScore = 0;
@@ -98,6 +96,8 @@ namespace CursorMove
             {
                 #region Initializing
                 PrintGameArea(yBorderMin, yBorderMax, xBorderMin, xBorderMax, windowLimit[X, MIN], windowLimit[X, MAX], windowLimit[Y, MIN], windowLimit[Y, MAX], backgroundColor);
+                CurrentStage(gameRound, backgroundColor);
+                ScoreCounter(playerScore, backgroundColor);
                 isActive = true;
                 Console.BackgroundColor = (ConsoleColor)backgroundColor;
 
@@ -183,12 +183,13 @@ namespace CursorMove
                     {
                         if (inactiveCursor[i])      //  Om tecknet "försvinner" d.v.s. går till y-gränsen så blir den inactive. Denna if-sats ger den en nya värden och "startar" om.
                         {
-                            posAxis[i, X] = xPaddle + (paddleSize / 2);
+                            posAxis[i, X] = rnd.Next(paddleSize + 1) + xPaddle;
                             posAxis[i, Y] = yPaddle - 3;
-                            cursorColor[i] = 0;
+                            cursorColor[i] = 15;
                             cursorVelocity[i, X] = RandomizeVelocity();
                             cursorVelocity[i, Y] = -1;
                             inactiveCursor[i] = false;
+                            cursorHit[i] = false;
                         }
 
                         if (cursorVelocity[i, Y] == 0)
@@ -240,30 +241,15 @@ namespace CursorMove
                     #endregion Keyboardinput
 
                     #region Hit-detection
-                    for (int i = 0; i < cursorAmount; i++)
+                    for (int i = 0; i < cursorAmount; i++)  //  Collision detection med bricks är rätt dåligt, kan gå igenom bricks ibland som skapar problem - Vet ej problemet.
                     {
                         if (!inactiveCursor[i])
                         {
-                            for (int j = 0; j < brickAmount; j++)
+                            if (cursorHit[i] && (posAxis[i, Y] > yBrickAxis || posAxis[i, Y] < yBrickAxis - brickColumns + 1))
                             {
-                                if (hitBricks[j] == false)
-                                {
-                                    if (posAxis[i, Y] + cursorVelocity[i, Y] == scoreBricks[j, Y])
-                                    {
-                                        if (posAxis[i, X] + cursorVelocity[i, X] >= scoreBricks[j, X] && posAxis[i, X] - cursorVelocity[i, X] <= scoreBricks[j, X] + xBrickSize - 1)
-                                        {
-                                            hitBricks[j] = true;
-                                            cursorVelocity[i, Y] = -cursorVelocity[i, Y];
-                                        }
-                                        else if (posAxis[i, X] + cursorVelocity[i, X] == scoreBricks[j, X] + xBrickSize || posAxis[i, X] == scoreBricks[j, X] - 1)
-                                        {
-                                            cursorVelocity[i, X] = -cursorVelocity[i, X];
-                                        }
-                                    }
-                                }
+                                cursorHit[i] = false;
                             }
 
-                            // Kollar om tecknets x värde är inom plattans intervall.
                             if ((posAxis[i, Y] + cursorVelocity[i, Y]) >= windowLimit[Y, MAX] - 1)
                             {
                                 if (((posAxis[i, X] + cursorVelocity[i, X]) >= xPaddle) && (posAxis[i, X] + cursorVelocity[i, X]) <= (xPaddle + paddleSize))
@@ -282,10 +268,38 @@ namespace CursorMove
                                 cursorVelocity[i, Y] = -cursorVelocity[i, Y];
                                 posAxis[i, Y] = windowLimit[Y, MIN];
                             }
-
+                            
                             if ((posAxis[i, X] + cursorVelocity[i, X]) >= windowLimit[X, MAX] || (posAxis[i, X] + cursorVelocity[i, X]) <= windowLimit[X, MIN])
                             {
                                 cursorVelocity[i, X] = -cursorVelocity[i, X];
+                            }
+
+                            // Brick Collision
+                            if (!cursorHit[i])
+                            {
+                                for (int j = (brickAmount - 1); j >= 0; j--)
+                                {
+                                    if (hitBricks[j] == false)
+                                    {
+                                        if (posAxis[i, Y] + cursorVelocity[i, Y] == scoreBricks[j, Y])
+                                        {
+                                            if (posAxis[i, X] + cursorVelocity[i, X] >= scoreBricks[j, X] && posAxis[i, X] - cursorVelocity[i, X] <= (scoreBricks[j, X] + xBrickSize - 1))
+                                            {
+                                                if (Math.Sign(cursorVelocity[i, Y]) == -1)
+                                                {
+                                                    posAxis[i, Y] = scoreBricks[j, Y] - 1;
+                                                }
+                                                else
+                                                {
+                                                    posAxis[i, Y] = scoreBricks[j, Y] + 1;
+                                                }
+                                                cursorVelocity[i, Y] = -cursorVelocity[i, Y];
+                                                hitBricks[j] = true;
+                                                cursorHit[i] = true;
+                                            }
+                                        }
+                                    }
+                                }
                             }
 
                             posAxis[i, X] += cursorVelocity[i, X];
@@ -323,6 +337,23 @@ namespace CursorMove
                     Console.SetCursorPosition(xPaddle, yPaddle);
                     Console.Write(paddleClearText);
                 }
+
+                gameRound++;
+                for (int i = 0; i < cursorAmount; i++)
+                {
+                    cursorVelocity[i, X]++;
+                    if (gameRound % 2 == 0)
+                    {
+                        cursorVelocity[i, Y]++;
+                    }
+                }
+                if (gameRound % 2 == 0)
+                {
+                    if (paddleSize > 3)
+                    {
+                        paddleSize--;
+                    }
+                }
             }
         }
 
@@ -337,7 +368,6 @@ namespace CursorMove
         {
             string backgroundText = new string(' ', (windowLimitXMax + 1) - windowLimitXMin);
             string verticalText = new string('\u2588', (xBorderMax + 2) - windowLimitXMin);
-            ScoreCounter(0, backgroundColor);
             Console.ForegroundColor = ConsoleColor.White;
             Console.SetCursorPosition(windowLimitXMin - 1, yBorderMin);
             Console.Write(verticalText);
@@ -360,11 +390,18 @@ namespace CursorMove
             }
             return;
         }
+        void CurrentStage(int gameRound, byte backgroundColor)
+        {
+            Console.ResetColor();
+            Console.SetCursorPosition(0, 0);
+            Console.Write("Stage: {0}", gameRound);
+            Console.BackgroundColor = (ConsoleColor)backgroundColor;
+        }
 
         void ScoreCounter(int playerScore, byte backgroundColor)
         {
             Console.ResetColor();
-            Console.SetCursorPosition(0, 0);
+            Console.SetCursorPosition(0, 1);
             Console.Write("Score: {0}", playerScore);
             Console.BackgroundColor = (ConsoleColor)backgroundColor;
         }
